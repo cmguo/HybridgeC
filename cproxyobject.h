@@ -29,9 +29,9 @@ public:
 public:
     static CProxyObject * fromCallback(HandlePtr callback);
 
-    bool getProperty(char const * property, void * value);
+    void * readProperty(char const * property);
 
-    bool setProperty(char const * property, void * value);
+    bool writeProperty(char const * property, void * value);
 
     bool invokeMethod(char const * method, void ** args, HandlePtr onResult);
 
@@ -47,10 +47,12 @@ private:
 struct ProxyObjectStub
 {
     static ProxyObjectStub instance;
-    const char *(*metaData)(HandlePtr handle);
-    size_t (*readProperty)(HandlePtr handle, const Object *object, char const * property, void * result);
-    size_t (*writeProperty)(HandlePtr handle, Object *object, char const * property, void * value);
-    size_t (*invokeMethod)(HandlePtr handle, Object *object, char const * method, void ** args, HandlePtr response);
+    const char *(*metaData)(HandlePtr object);
+    void * (*readProperty)(HandlePtr object, char const * property);
+    size_t (*writeProperty)(HandlePtr object, char const * property, void * value);
+    size_t (*invokeMethod)(HandlePtr object, char const * method, void ** args, HandlePtr response);
+    size_t (*connect)(HandlePtr object, size_t signalIndex, HandlePtr handler);
+    size_t (*disconnect)(HandlePtr object, size_t signalIndex, HandlePtr handler);
 };
 
 

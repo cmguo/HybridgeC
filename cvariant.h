@@ -6,17 +6,41 @@
 class CVariant
 {
 public:
-    static void fromValue(Value const & from, void * to);
+    static void * allocBuffer(size_t size);
 
-    static void toValue(Value & to, void * from);
+    static void freeBuffer(Value::Type type, void * buffer);
 
-    static void * fromValue(Value const & from, bool copy = false);
+public:
+    CVariant(Value::Type type = Value::None, void * buffer = nullptr);
 
-    static Value toValue(Value::Type type, void * from, bool copy = false);
+    CVariant(Value const & from, bool copy = false);
 
-    static char * allocBuffer(size_t size);
+    ~CVariant();
 
-    static void resetBuffer();
+    operator void *() const
+    {
+        return buffer_;
+    }
+
+    void * detach();
+
+    Value toValue(bool copy = false);
+
+private:
+    Value::Type type_;
+    void * buffer_;
+};
+
+class CVariantArgs
+{
+public:
+    CVariantArgs(Array &&args);
+
+    operator void **();
+
+private:
+    std::vector<CVariant> vars_;
+    std::vector<void*> args_;
 };
 
 #endif // CVARIANT_H

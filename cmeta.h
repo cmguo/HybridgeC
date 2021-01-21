@@ -15,9 +15,9 @@ public:
     struct Callback
     {
         const char *(*metaData)(void const * handle);
-        size_t (*readProperty)(void const * handle, const Object *object, size_t propertyIndex, void * result);
+        void * (*readProperty)(void const * handle, const Object *object, size_t propertyIndex);
         size_t (*writeProperty)(void const * handle, Object *object, size_t propertyIndex, void * value);
-        size_t (*invokeMethod)(void const * handle, Object *object, size_t methodIndex, void ** args, void * result);
+        void * (*invokeMethod)(void const * handle, Object *object, size_t methodIndex, void ** args);
     };
 
     enum {
@@ -51,14 +51,6 @@ private:
 class CMetaProperty : public MetaProperty
 {
 public:
-    struct Callback
-    {
-        const char * (*name)(void const * handle);
-        size_t (*type)(void const * handle);
-        size_t (*read)(void const * handle, const Object *object, void * result);
-        size_t (*write)(void const * handle, Object *object, void * value);
-    };
-
     CMetaProperty(Array const & metaData, HandlePtr handle = nullptr);
 
     // MetaProperty interface

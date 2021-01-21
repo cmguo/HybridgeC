@@ -1,6 +1,8 @@
 #include "ctransport.h"
 #include "handleptr.h"
 
+#include <iostream>
+
 CTransport::CTransport(HandlePtr handle)
     : handle_(reinterpret_cast<Handle<Callback>*>(handle))
 {
@@ -13,6 +15,7 @@ void CTransport::sendMessage(const Message &message)
 
 void CTransport::messageReceived(const std::string &message)
 {
+    std::cout << "messageReceived: " << message << std::endl;
     Map empty;
     Value v = Value::fromJson(message);
     Transport::messageReceived(std::move(v.toMap(empty)));
@@ -24,7 +27,9 @@ void CTransport::messageReceived(const std::string &message)
 
 static void * createTransport(HandlePtr handle)
 {
-    return new CTransport(handle);
+    CTransport * t = new CTransport(handle);
+    std::cout << "createTransport: " << handle << " -> " << t << std::endl;
+    return t;
 }
 
 static void messageReceived(void * transport, char const * message)

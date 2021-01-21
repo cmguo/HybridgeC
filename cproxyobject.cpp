@@ -7,6 +7,7 @@
 
 CProxyObject::CProxyObject(HandlePtr channel)
 {
+    callback_.callback = &ProxyObjectStub::instance;
     handle_ = cast<CChannel::Callback>(channel)
             ->callback->createProxyObject(channel, cast<void>(&callback_));
 }
@@ -21,7 +22,7 @@ CProxyObject *CProxyObject::fromCallback(HandlePtr callback)
                 reinterpret_cast<char *>(callback) - offsetof(CProxyObject, callback_));
 }
 
-bool CProxyObject::getProperty(const char *property, void *value)
+void * CProxyObject::readProperty(const char *property)
 {
     MetaObject const * meta = metaObj();
     std::string name = property;
@@ -29,22 +30,21 @@ bool CProxyObject::getProperty(const char *property, void *value)
         MetaProperty const & mp = meta->property(i);
         if (name == mp.name()) {
             Value v = mp.read(this);
-            CVariant::fromValue(v, value);
+            return CVariant(v, true).detach();
             // TODO: when reset buffer?
-            return true;
         }
     }
-    return false;
+    return nullptr;
 }
 
-bool CProxyObject::setProperty(char const * property, void * value)
+bool CProxyObject::writeProperty(char const * property, void * value)
 {
     MetaObject const * meta = metaObj();
     std::string name = property;
     for (size_t i = 0; i < meta->propertyCount(); ++i) {
         MetaProperty const & mp = meta->property(i);
         if (name == mp.name()) {
-            return mp.write(this, CVariant::toValue(mp.type(), value));
+            return mp.write(this, CVariant(mp.type(), value).toValue());
         }
     }
     return false;
@@ -59,10 +59,10 @@ bool CProxyObject::invokeMethod(char const * method, void ** args, HandlePtr onR
         if (name == md.name()) {
             Array argv;
             for (size_t j = 0; j < md.parameterCount(); ++j)
-                argv.emplace_back(CVariant::toValue(md.parameterType(j), args[j]));
+                argv.emplace_back(CVariant(md.parameterType(j), args[j]).toValue());
             return md.invoke(this, std::move(argv),
                                   [onResult] (Value && result) {
-                cast<ResultCallback>(onResult)->callback->apply(onResult, result.value());
+                cast<ResultCallback>(onResult)->callback->apply(onResult, CVariant(result));
             });
         }
     }
@@ -72,11 +72,8 @@ bool CProxyObject::invokeMethod(char const * method, void ** args, HandlePtr onR
 static void handleSignal(void * handler, Object const * object, size_t index, Array && args)
 {
     auto callback = reinterpret_cast<Handle<CProxyObject::SignalCallback>*>(handler);
-    std::vector<void*> argv(args.size());
-    for (size_t i = 0; i < args.size(); ++i)
-        argv[i] = CVariant::fromValue(args[i]);
-    callback->callback->apply(reinterpret_cast<HandlePtr>(handler), object, index, &argv[0]);
-    CVariant::resetBuffer();
+    CVariantArgs argv(std::move(args));
+    callback->callback->apply(reinterpret_cast<HandlePtr>(handler), object, index, argv);
 }
 
 bool CProxyObject::connect(size_t signalIndex, HandlePtr handler)
@@ -112,24 +109,36 @@ static const char *metaData(HandlePtr)
     return nullptr;
 }
 
-static size_t readProperty(HandlePtr handle, const Object *, char const * property, void * result)
+static void * readProperty(HandlePtr object, char const * property)
 {
-    return CProxyObject::fromCallback(handle)->getProperty(property, result);
+    return CProxyObject::fromCallback(object)->readProperty(property);
 }
 
-static size_t writeProperty(HandlePtr handle, Object *, char const * property, void * value)
+static size_t writeProperty(HandlePtr object, char const * property, void * value)
 {
-    return CProxyObject::fromCallback(handle)->setProperty(property, value);
+    return CProxyObject::fromCallback(object)->writeProperty(property, value);
 }
 
-static size_t invokeMethod(HandlePtr handle, Object *, char const * method, void ** args, HandlePtr response)
+static size_t invokeMethod(HandlePtr object, char const * method, void ** args, HandlePtr response)
 {
-    return CProxyObject::fromCallback(handle)->invokeMethod(method, args, response);
+    return CProxyObject::fromCallback(object)->invokeMethod(method, args, response);
+}
+
+static size_t connect(HandlePtr object, size_t signalIndex, HandlePtr handler)
+{
+    return CProxyObject::fromCallback(object)->connect(signalIndex, handler);
+}
+
+static size_t disconnect(HandlePtr object, size_t signalIndex, HandlePtr handler)
+{
+    return CProxyObject::fromCallback(object)->disconnect(signalIndex, handler);
 }
 
 ProxyObjectStub ProxyObjectStub::instance = {
     ::metaData,
     ::readProperty,
     ::writeProperty,
-    ::invokeMethod
+    ::invokeMethod,
+    ::connect,
+    ::disconnect
 };

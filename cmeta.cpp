@@ -3,11 +3,25 @@
 #include "handleptr.h"
 #include "priv/collection.h"
 
+#include <iostream>
+
 CMetaObject::CMetaObject(HandlePtr handle)
     : handle_(cast<Callback>(handle))
 {
     char const * meta = handle_->callback->metaData(handle_);
     metaData_.swap(Value::fromJson(meta).toMap(metaData_));
+    for (auto & p : mapValue(metaData_, "properties").toArray()) {
+        properties_.push_back(CMetaProperty(p.toArray(), handle));
+    }
+    // destroyed signal, index: -1, because +1
+    static Value destroyed = Value::fromJson("[\"destroyed\", 5, -1, \"V()\", 9, [], []]");
+    methods_.push_back(CMetaMethod(destroyed.toArray()));
+    for (auto & m : mapValue(metaData_, "methods").toArray()) {
+        methods_.push_back(CMetaMethod(m.toArray(), handle));
+    }
+    for (auto & e : mapValue(metaData_, "enums").toArray()) {
+        enums_.push_back(CMetaEnum(e.toArray()));
+    }
 }
 
 const char *CMetaObject::className() const
@@ -102,17 +116,15 @@ const MetaMethod &CMetaProperty::notifySignal() const
 
 Value CMetaProperty::read(const Object *object) const
 {
-    char buf[32]; // Enought for all types
-    Value result(type(), buf);
     size_t index = static_cast<size_t>(metaData_[3].toInt());
-    handle_->callback->readProperty(handle_, object, index, buf);
-    return result;
+    CVariant value = {type(), handle_->callback->readProperty(handle_, object, index)};
+    return value.toValue(true);
 }
 
 bool CMetaProperty::write(Object *object, Value &&value) const
 {
     size_t index = static_cast<size_t>(metaData_[3].toInt());
-    return handle_->callback->writeProperty(handle_, object, index, value.value());
+    return handle_->callback->writeProperty(handle_, object, index, CVariant(value));
 }
 
 CMetaMethod::CMetaMethod(Array const & metaData, HandlePtr handle)
@@ -128,12 +140,12 @@ const char *CMetaMethod::name() const
 
 bool CMetaMethod::isValid() const
 {
-    return handle_;
+    return true;
 }
 
 bool CMetaMethod::isSignal() const
 {
-    return metaData_[12].toInt() & CMetaObject::Signal;
+    return metaData_[1].toInt() & CMetaObject::Signal;
 }
 
 bool CMetaMethod::isPublic() const
@@ -143,7 +155,7 @@ bool CMetaMethod::isPublic() const
 
 size_t CMetaMethod::methodIndex() const
 {
-    return static_cast<size_t>(metaData_[2].toInt());
+    return static_cast<size_t>(metaData_[2].toInt() + 1);
 }
 
 const char *CMetaMethod::methodSignature() const
@@ -195,15 +207,11 @@ private:
 
 bool CMetaMethod::invoke(Object *object, Array &&args, const MetaMethod::Response &resp) const
 {
-    std::vector<void*> argv(args.size());
-    for (size_t i = 0; i < args.size(); ++i)
-        argv[i] = CVariant::fromValue(args[i]);
-    char buf[32]; // Enought for all types
-    bool ok = handle_->callback->invokeMethod(handle_, object, methodIndex(), &argv[0], buf);
-    CVariant::resetBuffer();
-    if (ok)
-        resp(CVariant::toValue(returnType(), buf));
-    return ok;
+    CVariantArgs argv(std::move(args));
+    void * result = handle_->callback
+            ->invokeMethod(handle_, object, methodIndex() - 1, argv);
+    resp(CVariant(returnType(), result).toValue());
+    return result;
 }
 
 

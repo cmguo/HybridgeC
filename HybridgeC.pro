@@ -23,7 +23,8 @@ SOURCES += \
     cmeta.cpp \
     cproxyobject.cpp \
     ctransport.cpp \
-    cvariant.cpp
+    cvariant.cpp \
+    hybridge.cpp
 
 HEADERS += \
     HybridgeC_global.h \
@@ -32,7 +33,8 @@ HEADERS += \
     cproxyobject.h \
     ctransport.h \
     cvariant.h \
-    handleptr.h
+    handleptr.h \
+    hybridge.h
 
 # Default rules for deployment.
 unix {
