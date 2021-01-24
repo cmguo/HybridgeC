@@ -28,6 +28,8 @@ public:
 
     CMetaObject(HandlePtr handle);
 
+    static Map encode(MetaObject const & meta);
+
     // MetaObject interface
 public:
     virtual const char *className() const override;
@@ -52,6 +54,8 @@ class CMetaProperty : public MetaProperty
 {
 public:
     CMetaProperty(Array const & metaData, HandlePtr handle = nullptr);
+
+    static Array encode(MetaProperty const & prop);
 
     // MetaProperty interface
 public:
@@ -81,6 +85,8 @@ class CMetaMethod : public MetaMethod
 {
 public:
     CMetaMethod(Array const & metaData, HandlePtr handle = nullptr);
+
+    static Array encode(MetaMethod const & method);
 
     // MetaMethod interface
 public:
@@ -114,6 +120,8 @@ class CMetaEnum : public MetaEnum
 {
 public:
     CMetaEnum(Array const & metaData);
+
+    static Array encode(MetaEnum const & enumerator);
 
     // MetaEnum interface
 public:

@@ -20,7 +20,7 @@ public:
         size_t (*apply)(HandlePtr handle, Object const * object, size_t signalIndex, void ** args);
     };
 
-    CProxyObject(HandlePtr channel);
+    CProxyObject(HandlePtr channel, Map &&classinfo);
 
     ~CProxyObject() override;
 
@@ -28,6 +28,8 @@ public:
 
 public:
     static CProxyObject * fromCallback(HandlePtr callback);
+
+    char const * metaData();
 
     void * readProperty(char const * property);
 

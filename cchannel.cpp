@@ -31,9 +31,9 @@ std::string CChannel::createUuid() const
     return str;
 }
 
-ProxyObject *CChannel::createProxyObject() const
+ProxyObject *CChannel::createProxyObject(Map &&classinfo) const
 {
-    CProxyObject * po = new CProxyObject(cast<void>(handle_));
+    CProxyObject * po = new CProxyObject(cast<void>(handle_), std::move(classinfo));
     return po;
 }
 

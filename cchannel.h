@@ -28,7 +28,7 @@ public:
 protected:
     virtual MetaObject *metaObject(const Object *object) const override;
     virtual std::string createUuid() const override;
-    virtual ProxyObject *createProxyObject() const override;
+    virtual ProxyObject *createProxyObject(Map &&classinfo) const override;
     virtual void startTimer(int msec) override;
     virtual void stopTimer() override;
 

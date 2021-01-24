@@ -15,7 +15,13 @@ public:
 
     CVariant(Value const & from, bool copy = false);
 
+    CVariant(CVariant && o);
+
+    DELETE_COPY(CVariant)
+
     ~CVariant();
+
+    CVariant & operator=(CVariant && o);
 
     operator void *() const
     {

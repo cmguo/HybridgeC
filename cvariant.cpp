@@ -158,6 +158,7 @@ static size_t copyObject(void const * f, void * t, bool c)
 }
 
 static constexpr size_t (*copies[])(void const *, void *, bool) = {
+        nullptr,
         &copy<bool>, &copy<int>, &copy<long long>,
         &copy<float>, &copy<double>, &copy2<std::string>,
         &copy2<Array>, &copy2<Map>, &copyObject,
@@ -203,10 +204,25 @@ CVariant::CVariant(Value const & from, bool copy)
     copies[from.type()](from.value(), buffer_, copy);
 }
 
+CVariant::CVariant(CVariant &&o)
+    : type_(o.type_)
+    , buffer_(o.buffer_)
+{
+    o.buffer_ = nullptr;
+}
+
 CVariant::~CVariant()
 {
     if (buffer_)
         freeBuffer(type_, buffer_);
+}
+
+CVariant &CVariant::operator=(CVariant &&o)
+{
+    CVariant t(std::move(o));
+    std::swap(type_, t.type_);
+    std::swap(buffer_, t.buffer_);
+    return *this;
 }
 
 void *CVariant::detach()

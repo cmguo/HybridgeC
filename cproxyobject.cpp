@@ -5,7 +5,8 @@
 
 #include <core/meta.h>
 
-CProxyObject::CProxyObject(HandlePtr channel)
+CProxyObject::CProxyObject(HandlePtr channel, Map &&classinfo)
+    : ProxyObject(std::move(classinfo))
 {
     callback_.callback = &ProxyObjectStub::instance;
     handle_ = cast<CChannel::Callback>(channel)
@@ -20,6 +21,15 @@ CProxyObject *CProxyObject::fromCallback(HandlePtr callback)
 {
     return reinterpret_cast<CProxyObject*>(
                 reinterpret_cast<char *>(callback) - offsetof(CProxyObject, callback_));
+}
+
+char const * CProxyObject::metaData()
+{
+    Map data = CMetaObject::encode(*metaObj());
+    std::string str = Value::toJson(data);
+    void * buffer = CVariant::allocBuffer(str.length() + 1);
+    memcpy(buffer, str.c_str(), str.length() + 1);
+    return reinterpret_cast<char const *>(buffer);
 }
 
 void * CProxyObject::readProperty(const char *property)
@@ -54,6 +64,7 @@ bool CProxyObject::invokeMethod(char const * method, void ** args, HandlePtr onR
 {
     MetaObject const * meta = metaObj();
     std::string name = method;
+    CVariant argsBuffer(Value::None, args);
     for (size_t i = 0; i < meta->methodCount(); ++i) {
         MetaMethod const & md = meta->method(i);
         if (name == md.name()) {
@@ -104,9 +115,9 @@ bool CProxyObject::disconnect(size_t signalIndex, HandlePtr handler)
 
 /* ProxyObjectStub */
 
-static const char *metaData(HandlePtr)
+static const char *metaData(HandlePtr object)
 {
-    return nullptr;
+    return CProxyObject::fromCallback(object)->metaData();
 }
 
 static void * readProperty(HandlePtr object, char const * property)

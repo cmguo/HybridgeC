@@ -24,6 +24,28 @@ CMetaObject::CMetaObject(HandlePtr handle)
     }
 }
 
+Map CMetaObject::encode(const MetaObject &meta)
+{
+    Array properties;
+    for (size_t i = 0; i < meta.propertyCount(); ++i) {
+        properties.emplace_back(CMetaProperty::encode(meta.property(i)));
+    }
+    Array methods;
+    for (size_t i = 0; i < meta.methodCount(); ++i) {
+        methods.emplace_back(CMetaMethod::encode(meta.method(i)));
+    }
+    Array enumerators;
+    for (size_t i = 0; i < meta.enumeratorCount(); ++i) {
+        enumerators.emplace_back(CMetaEnum::encode(meta.enumerator(i)));
+    }
+    Map data;
+    data.emplace("class", meta.className());
+    data.emplace("properties", std::move(properties));
+    data.emplace("methods", std::move(methods));
+    data.emplace("enumerators", std::move(enumerators));
+    return data;
+}
+
 const char *CMetaObject::className() const
 {
     return mapValue(metaData_, "class").toString().c_str();
@@ -75,6 +97,21 @@ CMetaProperty::CMetaProperty(Array const & metaData, HandlePtr handle)
     : metaData_(metaData)
     , handle_(cast<CMetaObject::Callback>(handle))
 {
+}
+
+Array CMetaProperty::encode(const MetaProperty &prop)
+{
+    int flag = 0;
+    if (prop.isConstant()) flag |= CMetaObject::Constant;
+    if (prop.hasNotifySignal()) flag |= CMetaObject::Signal;
+    Array data;
+
+    data.emplace_back(prop.name());
+    data.emplace_back(flag);
+    data.emplace_back(static_cast<int>(prop.type()));
+    data.emplace_back(-1);
+    data.emplace_back(static_cast<int>(prop.notifySignalIndex()));
+    return data;
 }
 
 const char *CMetaProperty::name() const
@@ -131,6 +168,28 @@ CMetaMethod::CMetaMethod(Array const & metaData, HandlePtr handle)
     : metaData_(metaData)
     , handle_(cast<CMetaObject::Callback>(handle))
 {
+}
+
+Array CMetaMethod::encode(const MetaMethod &method)
+{
+    Array parameterTypes;
+    Array parameterNames;
+    for (size_t i = 0; i < method.parameterCount(); ++i){
+        parameterTypes.emplace_back(method.parameterType(i));
+        parameterNames.emplace_back(method.parameterName(i));
+    }
+    int flag = 0;
+    if (method.isPublic()) flag |= CMetaObject::Public;
+    if (method.isSignal()) flag |= CMetaObject::Signal;
+    Array data;
+    data.emplace_back(method.name());
+    data.emplace_back(flag);
+    data.emplace_back(static_cast<int>(method.methodIndex()));
+    data.emplace_back(method.methodSignature());
+    data.emplace_back(static_cast<int>(method.returnType()));
+    data.emplace_back(std::move(parameterTypes));
+    data.emplace_back(std::move(parameterNames));
+    return data;
 }
 
 const char *CMetaMethod::name() const
@@ -218,6 +277,21 @@ bool CMetaMethod::invoke(Object *object, Array &&args, const MetaMethod::Respons
 CMetaEnum::CMetaEnum(Array const & metaData)
     : metaData_(metaData)
 {
+}
+
+Array CMetaEnum::encode(const MetaEnum &enumerator)
+{
+    Array keys;
+    Array values;
+    for (size_t i = 0; i < enumerator.keyCount(); ++i){
+        keys.emplace_back(enumerator.key(i));
+        values.emplace_back(enumerator.value(i));
+    }
+    Array data;
+    data.emplace_back(enumerator.name());
+    data.emplace_back(std::move(keys));
+    data.emplace_back(std::move(values));
+    return data;
 }
 
 const char *CMetaEnum::name() const
