@@ -126,7 +126,7 @@ bool CMetaProperty::isValid() const
 
 Value::Type CMetaProperty::type() const
 {
-    return static_cast<Value::Type>(metaData_[1].toInt());
+    return static_cast<Value::Type>(metaData_[2].toInt());
 }
 
 bool CMetaProperty::isConstant() const
