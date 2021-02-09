@@ -10,6 +10,7 @@ struct CHandle
 };
 
 typedef CHandle<void>* CHandlePtr;
+typedef CHandle<void> const * CConstHandlePtr;
 
 template <typename T, typename F>
 inline CHandle<T> * cast(CHandle<F> * handle)
@@ -29,6 +30,8 @@ typedef struct CHandle
 {
     void * callback;
 } * CHandlePtr;
+
+typedef struct CHandle const * CConstHandlePtr;
 
 #endif // __cplusplus
 

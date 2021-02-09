@@ -5,19 +5,19 @@
 
 #include <core/proxyobject.h>
 
-struct ProxyObjectStub;
+struct CProxyObjectStub;
 
 class CProxyObject : public ProxyObject
 {
 public:
     struct ResultCallback
     {
-        size_t (*apply)(CHandlePtr handle, void * result);
+        void (*apply)(CHandlePtr handle, void * result);
     };
 
     struct SignalCallback
     {
-        size_t (*apply)(CHandlePtr handle, Object const * object, size_t signalIndex, void ** args);
+        void (*apply)(CHandlePtr handle, CConstHandlePtr object, size_t signalIndex, void ** args);
     };
 
     CProxyObject(CHandlePtr channel, Map &&classinfo);
@@ -42,14 +42,13 @@ public:
     bool disconnect(size_t signalIndex, CHandlePtr handler);
 
 private:
-    CHandle<ProxyObjectStub> callback_;
+    CHandle<CProxyObjectStub> callback_;
     CHandlePtr handle_;
 };
 
-struct ProxyObjectStub
+struct CProxyObjectStub
 {
-    static ProxyObjectStub instance;
-    const char *(*metaData)(CHandlePtr object);
+    const char * (*metaData)(CHandlePtr object);
     void * (*readProperty)(CHandlePtr object, char const * property);
     size_t (*writeProperty)(CHandlePtr object, char const * property, void * value);
     size_t (*invokeMethod)(CHandlePtr object, char const * method, void ** args, CHandlePtr response);

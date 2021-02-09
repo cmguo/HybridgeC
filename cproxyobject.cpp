@@ -5,10 +5,12 @@
 
 #include <core/metaobject.h>
 
+extern CProxyObjectStub proxyObjectStub;
+
 CProxyObject::CProxyObject(CHandlePtr channel, Map &&classinfo)
     : ProxyObject(std::move(classinfo))
 {
-    callback_.callback = &ProxyObjectStub::instance;
+    callback_.callback = &proxyObjectStub;
     handle_ = cast<CChannel::Callback>(channel)
             ->callback->createProxyObject(channel, cast<void>(&callback_));
 }
@@ -84,7 +86,7 @@ static void handleSignal(void * handler, Object const * object, size_t index, Ar
 {
     auto callback = reinterpret_cast<CHandle<CProxyObject::SignalCallback>*>(handler);
     CVariantArgs argv(std::move(args));
-    callback->callback->apply(reinterpret_cast<CHandlePtr>(handler), object, index, argv);
+    callback->callback->apply(reinterpret_cast<CHandlePtr>(handler), reinterpret_cast<CConstHandlePtr>(object), index, argv);
 }
 
 bool CProxyObject::connect(size_t signalIndex, CHandlePtr handler)
@@ -145,7 +147,7 @@ static size_t disconnect(CHandlePtr object, size_t signalIndex, CHandlePtr handl
     return CProxyObject::fromCallback(object)->disconnect(signalIndex, handler);
 }
 
-ProxyObjectStub ProxyObjectStub::instance = {
+CProxyObjectStub proxyObjectStub = {
     ::metaData,
     ::readProperty,
     ::writeProperty,

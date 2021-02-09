@@ -36,12 +36,12 @@ extern "C"
         free(ptr);
     }
 
-    HYBRIDGEC_EXPORT void *allocBuffer(size_t size)
+    HYBRIDGEC_EXPORT void * hybridgeAllocBuffer(size_t size)
     {
         return CVariant::allocBuffer(size);
     }
 
-    HYBRIDGEC_EXPORT void freeBuffer(size_t type, void * buffer)
+    HYBRIDGEC_EXPORT void hybridgeFreeBuffer(size_t type, void * buffer)
     {
         CVariant::freeBuffer(static_cast<Value::Type>(type), buffer);
     }

@@ -60,7 +60,7 @@ CMetaObject *CChannel::metaObject(CHandle<CMetaObject::Callback> *handle) const
     auto it = metaobjs_.find(handle);
     if (it == metaobjs_.end()) {
         CHandle<CMetaObject::Callback> * super = handle->callback->super
-                ? reinterpret_cast<CHandle<CMetaObject::Callback>*>(handle->callback->super(cast<void>(handle)))
+                ? cast<CMetaObject::Callback>(handle->callback->super(cast<void>(handle)))
                 : nullptr;
         CMetaObject * m = new CMetaObject(metaObject(super), handle);
         std::cout << "CChannel metaObject " << m->className() << std::endl;

@@ -7,11 +7,11 @@
 
 struct CMetaObjectCallback
 {
-    void * (*super)(CHandlePtr handle);
-    const char *(*metaData)(CHandlePtr handle);
-    void * (*readProperty)(CHandlePtr handle, const void *object, size_t propertyIndex);
-    size_t (*writeProperty)(CHandlePtr handle, void *object, size_t propertyIndex, void * value);
-    void * (*invokeMethod)(CHandlePtr handle, void *object, size_t methodIndex, void ** args);
+    CHandlePtr (*super)(CHandlePtr handle);
+    const char *(*metaData)(CConstHandlePtr handle);
+    void * (*readProperty)(CConstHandlePtr handle, const void *object, size_t propertyIndex);
+    size_t (*writeProperty)(CConstHandlePtr handle, void *object, size_t propertyIndex, void * value);
+    void * (*invokeMethod)(CConstHandlePtr handle, void *object, size_t methodIndex, void ** args);
 };
 
 #ifdef __cplusplus
