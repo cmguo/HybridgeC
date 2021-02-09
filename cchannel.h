@@ -43,10 +43,12 @@ protected:
     virtual void startTimer(int msec) override;
     virtual void stopTimer() override;
 
+    CMetaObject *metaObject(CHandle<CMetaObject::Callback> * handle) const;
+
 private:
     CHandle<CChannelStub> stub_;
     CHandle<Callback> * handle_;
-    mutable std::map<CHandlePtr, CMetaObject*> metaobjs_;
+    mutable std::map<CHandle<CMetaObject::Callback> *, CMetaObject*> metaobjs_;
 };
 
 #endif

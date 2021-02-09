@@ -17,6 +17,12 @@ inline CHandle<T> * cast(CHandle<F> * handle)
     return reinterpret_cast<CHandle<T>*>(handle);
 }
 
+template <typename T, typename F>
+inline CHandle<T> const * cast(CHandle<F> const * handle)
+{
+    return reinterpret_cast<CHandle<T>*>(handle);
+}
+
 #else
 
 typedef struct CHandle

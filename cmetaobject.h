@@ -7,6 +7,7 @@
 
 struct CMetaObjectCallback
 {
+    void * (*super)(CHandlePtr handle);
     const char *(*metaData)(CHandlePtr handle);
     void * (*readProperty)(CHandlePtr handle, const void *object, size_t propertyIndex);
     size_t (*writeProperty)(CHandlePtr handle, void *object, size_t propertyIndex, void * value);
@@ -32,7 +33,7 @@ public:
         Signal = 4, // hasSignal
     };
 
-    CMetaObject(CHandlePtr handle);
+    CMetaObject(CMetaObject * super, CHandle<Callback> * handle);
 
     static Map encode(MetaObject const & meta);
 
@@ -48,18 +49,36 @@ public:
     virtual bool connect(const Connection &c) const override;
     virtual bool disconnect(const Connection &c) const override;
 
+protected:
+    CMetaObject();
+
 private:
-    CHandle<Callback> * handle_;
+    CMetaObject * super_ = nullptr;
+    CHandle<Callback> * handle_ = nullptr;
     Map metaData_;
     std::vector<CMetaProperty> properties_;
     std::vector<CMetaMethod> methods_;
     std::vector<CMetaEnum> enums_;
 };
 
+class CRootMetaObject : public CMetaObject
+{
+public:
+    CRootMetaObject() {}
+
+    // MetaObject interface
+public:
+    virtual const char *className() const override;
+    virtual size_t propertyCount() const override { return 0; }
+    virtual size_t methodCount() const override;
+    virtual const MetaMethod &method(size_t index) const override;
+    virtual size_t enumeratorCount() const override { return 0; }
+};
+
 class CMetaProperty : public MetaProperty
 {
 public:
-    CMetaProperty(Array const & metaData, CHandlePtr handle = nullptr);
+    CMetaProperty(Array const & metaData, CHandle<CMetaObject::Callback> * handle = nullptr);
 
     static Array encode(MetaProperty const & prop);
 
@@ -90,7 +109,7 @@ private:
 class CMetaMethod : public MetaMethod
 {
 public:
-    CMetaMethod(Array const & metaData, CHandlePtr handle = nullptr);
+    CMetaMethod(Array const & metaData, CHandle<CMetaObject::Callback> * handle = nullptr);
 
     static Array encode(MetaMethod const & method);
 

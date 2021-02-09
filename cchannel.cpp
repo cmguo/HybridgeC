@@ -24,13 +24,7 @@ CChannel * CChannel::fromCallback(CHandlePtr callback)
 MetaObject *CChannel::metaObject(const Object *object) const
 {
     CHandlePtr h = handle_->callback->metaObject(cast<void>(handle_), object);
-    auto it = metaobjs_.find(h);
-    if (it == metaobjs_.end()) {
-        CMetaObject * m = new CMetaObject(h);
-        std::cout << "CChannel metaObject " << m->className() << std::endl;
-        it = metaobjs_.insert(std::make_pair(h, m)).first;
-    }
-    return it->second;
+    return metaObject(cast<CMetaObject::Callback>(h));
 }
 
 std::string CChannel::createUuid() const
@@ -55,6 +49,20 @@ void CChannel::startTimer(int msec)
 void CChannel::stopTimer()
 {
     handle_->callback->stopTimer(cast<void>(handle_));
+}
+
+CMetaObject *CChannel::metaObject(CHandle<CMetaObject::Callback> *handle) const
+{
+    auto it = metaobjs_.find(handle);
+    if (it == metaobjs_.end()) {
+        CHandle<CMetaObject::Callback> * super = handle->callback->super
+                ? reinterpret_cast<CHandle<CMetaObject::Callback>*>(handle->callback->super(cast<void>(handle)))
+                : nullptr;
+        CMetaObject * m = new CMetaObject(metaObject(super), handle);
+        std::cout << "CChannel metaObject " << m->className() << std::endl;
+        it = metaobjs_.insert(std::make_pair(handle, m)).first;
+    }
+    return it->second;
 }
 
 /* ChannelStub */

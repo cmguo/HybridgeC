@@ -20,21 +20,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     cchannel.cpp \
-    cmeta.cpp \
+    cmetaobject.cpp \
     cproxyobject.cpp \
     ctransport.cpp \
     cvariant.cpp \
-    hybridge.cpp
+    chybridge.cpp
 
 HEADERS += \
     HybridgeC_global.h \
     cchannel.h \
-    cmeta.h \
+    cmetaobject.h \
     cproxyobject.h \
     ctransport.h \
     cvariant.h \
-    handleptr.h \
-    hybridge.h
+    chandle.h \
+    chybridge.h
 
 # Default rules for deployment.
 unix {

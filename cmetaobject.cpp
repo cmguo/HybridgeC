@@ -5,8 +5,15 @@
 
 #include <iostream>
 
-CMetaObject::CMetaObject(CHandlePtr handle)
-    : handle_(cast<Callback>(handle))
+/* CMetaObject */
+
+CMetaObject::CMetaObject()
+{
+}
+
+CMetaObject::CMetaObject(CMetaObject * super, CHandle<Callback> * handle)
+    : super_(super)
+    , handle_(handle)
 {
     char const * meta = handle_->callback->metaData(cast<void>(handle_));
     metaData_.swap(Value::fromJson(meta).toMap(metaData_));
@@ -53,32 +60,35 @@ const char *CMetaObject::className() const
 
 size_t CMetaObject::propertyCount() const
 {
-    return properties_.size();
+    return super_->propertyCount() + properties_.size();
 }
 
 const MetaProperty &CMetaObject::property(size_t index) const
 {
-    return properties_.at(index);
+    size_t n = super_->propertyCount();
+    return index < n ? super_->property(index) : properties_.at(index);
 }
 
 size_t CMetaObject::methodCount() const
 {
-    return methods_.size();
+    return super_->methodCount() + methods_.size();
 }
 
 const MetaMethod &CMetaObject::method(size_t index) const
 {
-    return methods_.at(index);
+    size_t n = super_->methodCount();
+    return index < n ? super_->method(index) : methods_.at(index);
 }
 
 size_t CMetaObject::enumeratorCount() const
 {
-    return enums_.size();
+    return super_->enumeratorCount() + enums_.size();
 }
 
 const MetaEnum &CMetaObject::enumerator(size_t index) const
 {
-    return enums_.at(index);
+    size_t n = super_->propertyCount();
+    return index < n ? super_->enumerator(index) : enums_.at(index);
 }
 
 bool CMetaObject::connect(const MetaObject::Connection &c) const
@@ -93,9 +103,11 @@ bool CMetaObject::disconnect(const MetaObject::Connection &c) const
     return c;
 }
 
-CMetaProperty::CMetaProperty(Array const & metaData, CHandlePtr handle)
+/* CMetaProperty */
+
+CMetaProperty::CMetaProperty(Array const & metaData, CHandle<CMetaObject::Callback> * handle)
     : metaData_(metaData)
-    , handle_(cast<CMetaObject::Callback>(handle))
+    , handle_(handle)
 {
 }
 
@@ -164,9 +176,11 @@ bool CMetaProperty::write(Object *object, Value &&value) const
     return handle_->callback->writeProperty(cast<void>(handle_), object, index, CVariant(value));
 }
 
-CMetaMethod::CMetaMethod(Array const & metaData, CHandlePtr handle)
+/* CMetaMethod */
+
+CMetaMethod::CMetaMethod(Array const & metaData, CHandle<CMetaObject::Callback> * handle)
     : metaData_(metaData)
-    , handle_(cast<CMetaObject::Callback>(handle))
+    , handle_(handle)
 {
 }
 
@@ -273,6 +287,7 @@ bool CMetaMethod::invoke(Object *object, Array &&args, const MetaMethod::Respons
     return result;
 }
 
+/* CMetaEnum */
 
 CMetaEnum::CMetaEnum(Array const & metaData)
     : metaData_(metaData)
