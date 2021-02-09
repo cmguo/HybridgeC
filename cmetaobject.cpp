@@ -120,8 +120,8 @@ Array CMetaProperty::encode(const MetaProperty &prop)
 
     data.emplace_back(prop.name());
     data.emplace_back(flag);
-    data.emplace_back(static_cast<int>(prop.type()));
     data.emplace_back(-1);
+    data.emplace_back(static_cast<int>(prop.type()));
     data.emplace_back(static_cast<int>(prop.notifySignalIndex()));
     return data;
 }
@@ -138,12 +138,17 @@ bool CMetaProperty::isValid() const
 
 Value::Type CMetaProperty::type() const
 {
-    return static_cast<Value::Type>(metaData_[2].toInt());
+    return static_cast<Value::Type>(metaData_[3].toInt());
 }
 
 bool CMetaProperty::isConstant() const
 {
     return metaData_[1].toInt() & CMetaObject::Constant;
+}
+
+size_t CMetaProperty::propertyIndex() const
+{
+    return static_cast<size_t>(metaData_[2].toInt());
 }
 
 bool CMetaProperty::hasNotifySignal() const
@@ -165,14 +170,14 @@ const MetaMethod &CMetaProperty::notifySignal() const
 
 Value CMetaProperty::read(const Object *object) const
 {
-    size_t index = static_cast<size_t>(metaData_[3].toInt());
+    size_t index = static_cast<size_t>(metaData_[2].toInt());
     CVariant value = {type(), handle_->callback->readProperty(cast<void>(handle_), object, index)};
     return value.toValue(true);
 }
 
 bool CMetaProperty::write(Object *object, Value &&value) const
 {
-    size_t index = static_cast<size_t>(metaData_[3].toInt());
+    size_t index = static_cast<size_t>(metaData_[2].toInt());
     return handle_->callback->writeProperty(cast<void>(handle_), object, index, CVariant(value));
 }
 

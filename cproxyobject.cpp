@@ -3,7 +3,7 @@
 #include "cchannel.h"
 #include "cvariant.h"
 
-#include <core/meta.h>
+#include <core/metaobject.h>
 
 CProxyObject::CProxyObject(CHandlePtr channel, Map &&classinfo)
     : ProxyObject(std::move(classinfo))

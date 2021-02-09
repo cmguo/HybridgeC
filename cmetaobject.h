@@ -16,7 +16,7 @@ struct CMetaObjectCallback
 
 #ifdef __cplusplus
 
-#include <core/meta.h>
+#include <core/metaobject.h>
 
 class CMetaProperty;
 class CMetaMethod;
@@ -86,6 +86,7 @@ public:
     virtual bool isValid() const override;
     virtual Value::Type type() const override;
     virtual bool isConstant() const override;
+    virtual size_t propertyIndex() const override;
     virtual bool hasNotifySignal() const override;
     virtual size_t notifySignalIndex() const override;
     virtual const MetaMethod &notifySignal() const override;
@@ -96,8 +97,8 @@ private:
     /*
      * [0] name
      * [1] flags
-     * [2] type
-     * [3] index
+     * [2] index
+     * [3] type
      * [4] notifySignalIndex (optional)
      */
     Array const & metaData_;
