@@ -59,8 +59,8 @@ struct CChannelStub
     void (*deregisterObject)(CHandlePtr channel, void * object);
     bool (*blockUpdates)(CHandlePtr channel);
     void (*setBlockUpdates)(CHandlePtr channel, bool block);
-    void (*connectTo)(CHandlePtr channel, void * transport, CHandlePtr response);
-    void (*disconnectFrom)(CHandlePtr channel, void * transport);
+    void (*connectTo)(CHandlePtr channel, CHandlePtr transport, CHandlePtr response);
+    void (*disconnectFrom)(CHandlePtr channel, CHandlePtr transport);
     void (*timerEvent)(CHandlePtr channel);
     void (*free)(CHandlePtr channel);
 };

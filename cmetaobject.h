@@ -68,10 +68,8 @@ public:
 
     // MetaObject interface
 public:
-    virtual const char *className() const override;
     virtual size_t propertyCount() const override { return 0; }
-    virtual size_t methodCount() const override;
-    virtual const MetaMethod &method(size_t index) const override;
+    virtual size_t methodCount() const override { return 0; }
     virtual size_t enumeratorCount() const override { return 0; }
 };
 

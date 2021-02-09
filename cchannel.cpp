@@ -6,9 +6,13 @@
 
 #include <iostream>
 
+extern CChannelStub channelStub;
+
 CChannel::CChannel(CHandlePtr handle)
     : handle_(cast<Callback>(handle))
 {
+    stub_.callback = &channelStub;
+    metaobjs_.insert(std::make_pair(nullptr, new CRootMetaObject));
 }
 
 CHandlePtr CChannel::stub()
@@ -88,7 +92,7 @@ static void setBlockUpdates(CHandlePtr channel, bool block)
     return CChannel::fromCallback(channel)->setBlockUpdates(block);
 }
 
-static void connectTo(CHandlePtr channel, void * transport, CHandlePtr response)
+static void connectTo(CHandlePtr channel, CHandlePtr transport, CHandlePtr response)
 {
     std::cout << "connectTo: " << channel << " "  << transport << std::endl;
     MetaMethod::Response r;
@@ -98,12 +102,12 @@ static void connectTo(CHandlePtr channel, void * transport, CHandlePtr response)
             r->callback->apply(response, CVariant(result));
         };
     return CChannel::fromCallback(channel)->connectTo(
-                reinterpret_cast<CTransport*>(transport), r);
+                CTransport::fromCallback(transport), r);
 }
 
-static void disconnectFrom(CHandlePtr channel, void * transport)
+static void disconnectFrom(CHandlePtr channel, CHandlePtr transport)
 {
-    return CChannel::fromCallback(channel)->disconnectFrom(reinterpret_cast<CTransport*>(transport));
+    return CChannel::fromCallback(channel)->disconnectFrom(CTransport::fromCallback(transport));
 }
 
 static void timerEvent(CHandlePtr channel)
@@ -116,17 +120,14 @@ static void freeChannel(CHandlePtr channel)
     delete CChannel::fromCallback(channel);
 }
 
-extern "C"
-{
-    HYBRIDGEC_EXPORT struct CChannelStub channelStub = {
-        registerObject,
-        deregisterObject,
-        blockUpdates,
-        setBlockUpdates,
-        connectTo,
-        disconnectFrom,
-        timerEvent,
-        freeChannel
-    };
+CChannelStub channelStub = {
+    registerObject,
+    deregisterObject,
+    blockUpdates,
+    setBlockUpdates,
+    connectTo,
+    disconnectFrom,
+    timerEvent,
+    freeChannel
+};
 
-}
