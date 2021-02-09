@@ -1,6 +1,8 @@
 #ifndef CHANDLE_H
 #define CHANDLE_H
 
+#ifdef __cplusplus
+
 template <typename C>
 struct CHandle
 {
@@ -14,5 +16,14 @@ inline CHandle<T> * cast(CHandle<F> * handle)
 {
     return reinterpret_cast<CHandle<T>*>(handle);
 }
+
+#else
+
+typedef struct CHandle
+{
+    void * callback;
+} * CHandlePtr;
+
+#endif // __cplusplus
 
 #endif // CHANDLE_H

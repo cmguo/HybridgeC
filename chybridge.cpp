@@ -1,5 +1,7 @@
 #include "cvariant.h"
 #include "chybridge.h"
+#include "cchannel.h"
+#include "ctransport.h"
 
 #include <iostream>
 
@@ -7,6 +9,20 @@
 
 extern "C"
 {
+
+    HYBRIDGEC_EXPORT CHandlePtr hybridgeCreateChannel(CHandlePtr callback)
+    {
+        CChannel * c = new CChannel(callback);
+        // std::cout << "hybridgeCreateChannel: " << callback << " -> " << c << std::endl;
+        return c->stub();
+    }
+
+    HYBRIDGEC_EXPORT CHandlePtr hybridgeCreateTransport(CHandlePtr callback)
+    {
+        CTransport * t = new CTransport(callback);
+        // std::cout << "hybridgeCreateChannel: " << callback << " -> " << c << std::endl;
+        return t->stub();
+    }
 
     HYBRIDGEC_EXPORT void *hybridgeAlloc(size_t size)
     {

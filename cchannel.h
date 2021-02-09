@@ -4,25 +4,36 @@
 #include "HybridgeC_global.h"
 #include "cmetaobject.h"
 
+struct CChannelCallback
+{
+    CHandlePtr (*metaObject)(CHandlePtr handle, const void *object);
+    char const * (*createUuid)(CHandlePtr handle);
+    CHandlePtr (*createProxyObject)(CHandlePtr handle, CHandlePtr object);
+    void (*startTimer)(CHandlePtr handle, int msec);
+    void (*stopTimer)(CHandlePtr handle);
+};
+
+#ifdef __cplusplus
+
 #include <core/channel.h>
 
 #include <map>
 
+struct CChannelStub;
+
 class CChannel : public Channel
 {
 public:
-    struct Callback
-    {
-        CHandlePtr (*metaObject)(void const * handle, const Object *object);
-        char const * (*createUuid)(void const * handle);
-        CHandlePtr (*createProxyObject)(void const * handle, CHandlePtr object);
-        void (*startTimer)(void * handle, int msec);
-        void (*stopTimer)(void * handle);
-    };
+    typedef CChannelCallback Callback;
 
     CChannel(CHandlePtr handle);
 
     using Channel::timerEvent;
+
+public:
+    CHandlePtr stub();
+    
+    static CChannel * fromCallback(CHandlePtr callback);
 
     // Channel interface
 protected:
@@ -33,26 +44,23 @@ protected:
     virtual void stopTimer() override;
 
 private:
+    CHandle<CChannelStub> stub_;
     CHandle<Callback> * handle_;
     mutable std::map<CHandlePtr, CMetaObject*> metaobjs_;
 };
 
-struct ChannelStub
-{
-    void * (*create)(CHandlePtr handle);
-    void (*registerObject)(void * channel, char const * name, void * object);
-    void (*deregisterObject)(void * channel, void * object);
-    bool (*blockUpdates)(void * channel);
-    void (*setBlockUpdates)(void * channel, bool block);
-    void (*connectTo)(void * channel, void * transport, CHandlePtr response);
-    void (*disconnectFrom)(void * channel, void * transport);
-    void (*timerEvent)(void * channel);
-    void (*free)(void * channel);
-};
+#endif
 
-extern "C"
+struct CChannelStub
 {
-HYBRIDGEC_EXPORT extern struct ChannelStub channelStub;
-}
+    void (*registerObject)(CHandlePtr channel, char const * name, void * object);
+    void (*deregisterObject)(CHandlePtr channel, void * object);
+    bool (*blockUpdates)(CHandlePtr channel);
+    void (*setBlockUpdates)(CHandlePtr channel, bool block);
+    void (*connectTo)(CHandlePtr channel, void * transport, CHandlePtr response);
+    void (*disconnectFrom)(CHandlePtr channel, void * transport);
+    void (*timerEvent)(CHandlePtr channel);
+    void (*free)(CHandlePtr channel);
+};
 
 #endif // CCHANNEL_H

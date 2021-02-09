@@ -8,7 +8,7 @@
 CMetaObject::CMetaObject(CHandlePtr handle)
     : handle_(cast<Callback>(handle))
 {
-    char const * meta = handle_->callback->metaData(handle_);
+    char const * meta = handle_->callback->metaData(cast<void>(handle_));
     metaData_.swap(Value::fromJson(meta).toMap(metaData_));
     for (auto & p : mapValue(metaData_, "properties").toArray()) {
         properties_.push_back(CMetaProperty(p.toArray(), handle));
@@ -154,14 +154,14 @@ const MetaMethod &CMetaProperty::notifySignal() const
 Value CMetaProperty::read(const Object *object) const
 {
     size_t index = static_cast<size_t>(metaData_[3].toInt());
-    CVariant value = {type(), handle_->callback->readProperty(handle_, object, index)};
+    CVariant value = {type(), handle_->callback->readProperty(cast<void>(handle_), object, index)};
     return value.toValue(true);
 }
 
 bool CMetaProperty::write(Object *object, Value &&value) const
 {
     size_t index = static_cast<size_t>(metaData_[3].toInt());
-    return handle_->callback->writeProperty(handle_, object, index, CVariant(value));
+    return handle_->callback->writeProperty(cast<void>(handle_), object, index, CVariant(value));
 }
 
 CMetaMethod::CMetaMethod(Array const & metaData, CHandlePtr handle)
@@ -268,7 +268,7 @@ bool CMetaMethod::invoke(Object *object, Array &&args, const MetaMethod::Respons
 {
     CVariantArgs argv(std::move(args));
     void * result = handle_->callback
-            ->invokeMethod(handle_, object, methodIndex() - 1, argv);
+            ->invokeMethod(cast<void>(handle_), object, methodIndex() - 1, argv);
     resp(CVariant(returnType(), result).toValue());
     return result;
 }

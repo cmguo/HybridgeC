@@ -3,14 +3,27 @@
 
 #include <iostream>
 
+extern CTransportStub transportStub;
+
 CTransport::CTransport(CHandlePtr handle)
     : handle_(reinterpret_cast<CHandle<Callback>*>(handle))
 {
+    stub_.callback = &transportStub;
+}
+
+CHandlePtr CTransport::stub()
+{
+    return cast<void>(&stub_);
+}
+
+CTransport * CTransport::fromCallback(CHandlePtr callback)
+{
+    return reinterpret_cast<CTransport*>(reinterpret_cast<char *>(callback) - offsetof(CTransport, stub_));
 }
 
 void CTransport::sendMessage(const Message &message)
 {
-    handle_->callback->sendMessage(handle_, Value::toJson(message).c_str());
+    handle_->callback->sendMessage(cast<void>(handle_), Value::toJson(message).c_str());
 }
 
 void CTransport::messageReceived(const std::string &message)
@@ -25,30 +38,17 @@ void CTransport::messageReceived(const std::string &message)
 
 #define T reinterpret_cast<CTransport *>(transport)
 
-static void * createTransport(CHandlePtr handle)
+static void messageReceived(CHandlePtr transport, char const * message)
 {
-    CTransport * t = new CTransport(handle);
-    std::cout << "createTransport: " << handle << " -> " << t << std::endl;
-    return t;
+    CTransport::fromCallback(transport)->messageReceived(message);
 }
 
-static void messageReceived(void * transport, char const * message)
+static void freeTransport(CHandlePtr transport)
 {
-    T->messageReceived(message);
+    delete CTransport::fromCallback(transport);
 }
 
-static void freeTransport(void * transport)
-{
-    delete T;
-}
-
-
-extern "C"
-{
-    HYBRIDGEC_EXPORT extern struct TransportStub transportStub = {
-        createTransport,
-        messageReceived,
-        freeTransport
-    };
-
-}
+CTransportStub transportStub = {
+    messageReceived,
+    freeTransport
+};

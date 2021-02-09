@@ -4,17 +4,28 @@
 #include "HybridgeC_global.h"
 #include "chandle.h"
 
+struct CTransportCallback
+{
+    void (*sendMessage)(CHandlePtr handle, char const *message);
+};
+
+#ifdef __cplusplus
+
 #include <core/transport.h>
+
+struct CTransportStub;
 
 class CTransport : public Transport
 {
 public:
-    struct Callback
-    {
-        void (*sendMessage)(void * handle, char const *message);
-    };
-
+    typedef CTransportCallback Callback;
+    
     CTransport(CHandlePtr handle);
+
+public:
+    CHandlePtr stub();
+    
+    static CTransport * fromCallback(CHandlePtr callback);
 
     // Transport interface
 public:
@@ -23,19 +34,16 @@ public:
     void messageReceived(std::string const & message);
 
 private:
+    CHandle<CTransportStub> stub_;
     CHandle<Callback> * handle_;
 };
 
-struct TransportStub
-{
-    void * (*create)(CHandlePtr handle);
-    void (*messageReceived)(void * transport, char const * message);
-    void (*free)(void * transport);
-};
+#endif
 
-extern "C"
+struct CTransportStub
 {
-    HYBRIDGEC_EXPORT extern struct TransportStub transportStub;
-}
+    void (*messageReceived)(CHandlePtr transport, char const * message);
+    void (*free)(CHandlePtr transport);
+};
 
 #endif // CTRANSPORT_H

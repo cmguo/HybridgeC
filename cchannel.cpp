@@ -7,13 +7,23 @@
 #include <iostream>
 
 CChannel::CChannel(CHandlePtr handle)
-    : handle_(reinterpret_cast<CHandle<Callback>*>(handle))
+    : handle_(cast<Callback>(handle))
 {
+}
+
+CHandlePtr CChannel::stub()
+{
+    return cast<void>(&stub_);
+}
+
+CChannel * CChannel::fromCallback(CHandlePtr callback)
+{
+    return reinterpret_cast<CChannel*>(reinterpret_cast<char *>(callback) - offsetof(CChannel, stub_));
 }
 
 MetaObject *CChannel::metaObject(const Object *object) const
 {
-    CHandlePtr h = handle_->callback->metaObject(handle_, object);
+    CHandlePtr h = handle_->callback->metaObject(cast<void>(handle_), object);
     auto it = metaobjs_.find(h);
     if (it == metaobjs_.end()) {
         CMetaObject * m = new CMetaObject(h);
@@ -25,7 +35,7 @@ MetaObject *CChannel::metaObject(const Object *object) const
 
 std::string CChannel::createUuid() const
 {
-    char const * uuid = handle_->callback->createUuid(handle_);
+    char const * uuid = handle_->callback->createUuid(cast<void>(handle_));
     std::string str(uuid);
     ::free(const_cast<char *>(uuid));
     return str;
@@ -39,47 +49,38 @@ ProxyObject *CChannel::createProxyObject(Map &&classinfo) const
 
 void CChannel::startTimer(int msec)
 {
-    handle_->callback->startTimer(handle_, msec);
+    handle_->callback->startTimer(cast<void>(handle_), msec);
 }
 
 void CChannel::stopTimer()
 {
-    handle_->callback->stopTimer(handle_);
+    handle_->callback->stopTimer(cast<void>(handle_));
 }
 
 /* ChannelStub */
 
-#define C reinterpret_cast<CChannel *>(channel)
-
-static void * createChannel(CHandlePtr handle)
-{
-    CChannel * c = new CChannel(handle);
-    std::cout << "createChannel: " << handle << " -> " << c << std::endl;
-    return c;
-}
-
-static void registerObject(void * channel, char const * name, void * object)
+static void registerObject(CHandlePtr channel, char const * name, void * object)
 {
     std::cout << "registerObject: " << channel << " " << name << std::endl;
-    return C->registerObject(name, object);
+    return CChannel::fromCallback(channel)->registerObject(name, object);
 }
 
-static void deregisterObject(void * channel, void * object)
+static void deregisterObject(CHandlePtr channel, void * object)
 {
-    return C->deregisterObject(object);
+    return CChannel::fromCallback(channel)->deregisterObject(object);
 }
 
-static bool blockUpdates(void * channel)
+static bool blockUpdates(CHandlePtr channel)
 {
-    return C->blockUpdates();
+    return CChannel::fromCallback(channel)->blockUpdates();
 }
 
-static void setBlockUpdates(void * channel, bool block)
+static void setBlockUpdates(CHandlePtr channel, bool block)
 {
-    return C->setBlockUpdates(block);
+    return CChannel::fromCallback(channel)->setBlockUpdates(block);
 }
 
-static void connectTo(void * channel, void * transport, CHandlePtr response)
+static void connectTo(CHandlePtr channel, void * transport, CHandlePtr response)
 {
     std::cout << "connectTo: " << channel << " "  << transport << std::endl;
     MetaMethod::Response r;
@@ -88,29 +89,28 @@ static void connectTo(void * channel, void * transport, CHandlePtr response)
             auto r = reinterpret_cast<CHandle<CProxyObject::ResultCallback>*>(response);
             r->callback->apply(response, CVariant(result));
         };
-    return C->connectTo(
+    return CChannel::fromCallback(channel)->connectTo(
                 reinterpret_cast<CTransport*>(transport), r);
 }
 
-static void disconnectFrom(void * channel, void * transport)
+static void disconnectFrom(CHandlePtr channel, void * transport)
 {
-    return C->disconnectFrom(reinterpret_cast<CTransport*>(transport));
+    return CChannel::fromCallback(channel)->disconnectFrom(reinterpret_cast<CTransport*>(transport));
 }
 
-static void timerEvent(void * channel)
+static void timerEvent(CHandlePtr channel)
 {
-    return C->timerEvent();
+    return CChannel::fromCallback(channel)->timerEvent();
 }
 
-static void freeChannel(void * channel)
+static void freeChannel(CHandlePtr channel)
 {
-    delete C;
+    delete CChannel::fromCallback(channel);
 }
 
 extern "C"
 {
-    HYBRIDGEC_EXPORT struct ChannelStub channelStub = {
-        createChannel,
+    HYBRIDGEC_EXPORT struct CChannelStub channelStub = {
         registerObject,
         deregisterObject,
         blockUpdates,

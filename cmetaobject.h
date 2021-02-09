@@ -3,6 +3,18 @@
 
 #include "chandle.h"
 
+#include <stdlib.h>
+
+struct CMetaObjectCallback
+{
+    const char *(*metaData)(CHandlePtr handle);
+    void * (*readProperty)(CHandlePtr handle, const void *object, size_t propertyIndex);
+    size_t (*writeProperty)(CHandlePtr handle, void *object, size_t propertyIndex, void * value);
+    void * (*invokeMethod)(CHandlePtr handle, void *object, size_t methodIndex, void ** args);
+};
+
+#ifdef __cplusplus
+
 #include <core/meta.h>
 
 class CMetaProperty;
@@ -12,14 +24,8 @@ class CMetaEnum;
 class CMetaObject : public MetaObject
 {
 public:
-    struct Callback
-    {
-        const char *(*metaData)(void const * handle);
-        void * (*readProperty)(void const * handle, const Object *object, size_t propertyIndex);
-        size_t (*writeProperty)(void const * handle, Object *object, size_t propertyIndex, void * value);
-        void * (*invokeMethod)(void const * handle, Object *object, size_t methodIndex, void ** args);
-    };
-
+    typedef CMetaObjectCallback Callback;
+    
     enum {
         Public = 1,
         Constant = 2,
@@ -43,7 +49,7 @@ public:
     virtual bool disconnect(const Connection &c) const override;
 
 private:
-    CHandle<Callback> const * handle_;
+    CHandle<Callback> * handle_;
     Map metaData_;
     std::vector<CMetaProperty> properties_;
     std::vector<CMetaMethod> methods_;
@@ -78,7 +84,7 @@ private:
      * [4] notifySignalIndex (optional)
      */
     Array const & metaData_;
-    CHandle<CMetaObject::Callback> const * handle_;
+    CHandle<CMetaObject::Callback> * handle_;
 };
 
 class CMetaMethod : public MetaMethod
@@ -113,7 +119,7 @@ private:
      * [6] parameterNames
      */
     Array const & metaData_;
-    CHandle<CMetaObject::Callback> const * handle_;
+    CHandle<CMetaObject::Callback> * handle_;
 };
 
 class CMetaEnum : public MetaEnum
@@ -138,5 +144,7 @@ private:
      */
     Array const & metaData_;
 };
+
+#endif // __cplusplus
 
 #endif // CMETAOBJECT_H
