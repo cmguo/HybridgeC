@@ -1,10 +1,10 @@
 #include "ctransport.h"
-#include "handleptr.h"
+#include "chandle.h"
 
 #include <iostream>
 
-CTransport::CTransport(HandlePtr handle)
-    : handle_(reinterpret_cast<Handle<Callback>*>(handle))
+CTransport::CTransport(CHandlePtr handle)
+    : handle_(reinterpret_cast<CHandle<Callback>*>(handle))
 {
 }
 
@@ -25,7 +25,7 @@ void CTransport::messageReceived(const std::string &message)
 
 #define T reinterpret_cast<CTransport *>(transport)
 
-static void * createTransport(HandlePtr handle)
+static void * createTransport(CHandlePtr handle)
 {
     CTransport * t = new CTransport(handle);
     std::cout << "createTransport: " << handle << " -> " << t << std::endl;

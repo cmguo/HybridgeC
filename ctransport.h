@@ -2,7 +2,7 @@
 #define CTRANSPORT_H
 
 #include "HybridgeC_global.h"
-#include "handleptr.h"
+#include "chandle.h"
 
 #include <core/transport.h>
 
@@ -14,7 +14,7 @@ public:
         void (*sendMessage)(void * handle, char const *message);
     };
 
-    CTransport(HandlePtr handle);
+    CTransport(CHandlePtr handle);
 
     // Transport interface
 public:
@@ -23,12 +23,12 @@ public:
     void messageReceived(std::string const & message);
 
 private:
-    Handle<Callback> * handle_;
+    CHandle<Callback> * handle_;
 };
 
 struct TransportStub
 {
-    void * (*create)(HandlePtr handle);
+    void * (*create)(CHandlePtr handle);
     void (*messageReceived)(void * transport, char const * message);
     void (*free)(void * transport);
 };

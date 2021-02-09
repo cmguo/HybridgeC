@@ -1,7 +1,7 @@
 #ifndef CMETAOBJECT_H
 #define CMETAOBJECT_H
 
-#include "handleptr.h"
+#include "chandle.h"
 
 #include <core/meta.h>
 
@@ -26,7 +26,7 @@ public:
         Signal = 4, // hasSignal
     };
 
-    CMetaObject(HandlePtr handle);
+    CMetaObject(CHandlePtr handle);
 
     static Map encode(MetaObject const & meta);
 
@@ -43,7 +43,7 @@ public:
     virtual bool disconnect(const Connection &c) const override;
 
 private:
-    Handle<Callback> const * handle_;
+    CHandle<Callback> const * handle_;
     Map metaData_;
     std::vector<CMetaProperty> properties_;
     std::vector<CMetaMethod> methods_;
@@ -53,7 +53,7 @@ private:
 class CMetaProperty : public MetaProperty
 {
 public:
-    CMetaProperty(Array const & metaData, HandlePtr handle = nullptr);
+    CMetaProperty(Array const & metaData, CHandlePtr handle = nullptr);
 
     static Array encode(MetaProperty const & prop);
 
@@ -78,13 +78,13 @@ private:
      * [4] notifySignalIndex (optional)
      */
     Array const & metaData_;
-    Handle<CMetaObject::Callback> const * handle_;
+    CHandle<CMetaObject::Callback> const * handle_;
 };
 
 class CMetaMethod : public MetaMethod
 {
 public:
-    CMetaMethod(Array const & metaData, HandlePtr handle = nullptr);
+    CMetaMethod(Array const & metaData, CHandlePtr handle = nullptr);
 
     static Array encode(MetaMethod const & method);
 
@@ -113,7 +113,7 @@ private:
      * [6] parameterNames
      */
     Array const & metaData_;
-    Handle<CMetaObject::Callback> const * handle_;
+    CHandle<CMetaObject::Callback> const * handle_;
 };
 
 class CMetaEnum : public MetaEnum

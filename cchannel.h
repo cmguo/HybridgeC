@@ -2,7 +2,7 @@
 #define CCHANNEL_H
 
 #include "HybridgeC_global.h"
-#include "cmeta.h"
+#include "cmetaobject.h"
 
 #include <core/channel.h>
 
@@ -13,14 +13,14 @@ class CChannel : public Channel
 public:
     struct Callback
     {
-        HandlePtr (*metaObject)(void const * handle, const Object *object);
+        CHandlePtr (*metaObject)(void const * handle, const Object *object);
         char const * (*createUuid)(void const * handle);
-        HandlePtr (*createProxyObject)(void const * handle, HandlePtr object);
+        CHandlePtr (*createProxyObject)(void const * handle, CHandlePtr object);
         void (*startTimer)(void * handle, int msec);
         void (*stopTimer)(void * handle);
     };
 
-    CChannel(HandlePtr handle);
+    CChannel(CHandlePtr handle);
 
     using Channel::timerEvent;
 
@@ -33,18 +33,18 @@ protected:
     virtual void stopTimer() override;
 
 private:
-    Handle<Callback> * handle_;
-    mutable std::map<HandlePtr, CMetaObject*> metaobjs_;
+    CHandle<Callback> * handle_;
+    mutable std::map<CHandlePtr, CMetaObject*> metaobjs_;
 };
 
 struct ChannelStub
 {
-    void * (*create)(HandlePtr handle);
+    void * (*create)(CHandlePtr handle);
     void (*registerObject)(void * channel, char const * name, void * object);
     void (*deregisterObject)(void * channel, void * object);
     bool (*blockUpdates)(void * channel);
     void (*setBlockUpdates)(void * channel, bool block);
-    void (*connectTo)(void * channel, void * transport, HandlePtr response);
+    void (*connectTo)(void * channel, void * transport, CHandlePtr response);
     void (*disconnectFrom)(void * channel, void * transport);
     void (*timerEvent)(void * channel);
     void (*free)(void * channel);

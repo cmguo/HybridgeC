@@ -2,18 +2,18 @@
 #include "cproxyobject.h"
 #include "ctransport.h"
 #include "cvariant.h"
-#include "handleptr.h"
+#include "chandle.h"
 
 #include <iostream>
 
-CChannel::CChannel(HandlePtr handle)
-    : handle_(reinterpret_cast<Handle<Callback>*>(handle))
+CChannel::CChannel(CHandlePtr handle)
+    : handle_(reinterpret_cast<CHandle<Callback>*>(handle))
 {
 }
 
 MetaObject *CChannel::metaObject(const Object *object) const
 {
-    HandlePtr h = handle_->callback->metaObject(handle_, object);
+    CHandlePtr h = handle_->callback->metaObject(handle_, object);
     auto it = metaobjs_.find(h);
     if (it == metaobjs_.end()) {
         CMetaObject * m = new CMetaObject(h);
@@ -51,7 +51,7 @@ void CChannel::stopTimer()
 
 #define C reinterpret_cast<CChannel *>(channel)
 
-static void * createChannel(HandlePtr handle)
+static void * createChannel(CHandlePtr handle)
 {
     CChannel * c = new CChannel(handle);
     std::cout << "createChannel: " << handle << " -> " << c << std::endl;
@@ -79,13 +79,13 @@ static void setBlockUpdates(void * channel, bool block)
     return C->setBlockUpdates(block);
 }
 
-static void connectTo(void * channel, void * transport, HandlePtr response)
+static void connectTo(void * channel, void * transport, CHandlePtr response)
 {
     std::cout << "connectTo: " << channel << " "  << transport << std::endl;
     MetaMethod::Response r;
     if (response)
         r = [response] (Value && result) {
-            auto r = reinterpret_cast<Handle<CProxyObject::ResultCallback>*>(response);
+            auto r = reinterpret_cast<CHandle<CProxyObject::ResultCallback>*>(response);
             r->callback->apply(response, CVariant(result));
         };
     return C->connectTo(

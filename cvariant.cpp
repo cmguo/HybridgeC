@@ -1,6 +1,7 @@
 #include "cvariant.h"
 
 #include <iostream>
+#include <list>
 
 template<typename T>
 static size_t copy(void const * f, void * t, bool)

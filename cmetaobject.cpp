@@ -1,11 +1,11 @@
-#include "cmeta.h"
+#include "cmetaobject.h"
 #include "cvariant.h"
-#include "handleptr.h"
+#include "chandle.h"
 #include "priv/collection.h"
 
 #include <iostream>
 
-CMetaObject::CMetaObject(HandlePtr handle)
+CMetaObject::CMetaObject(CHandlePtr handle)
     : handle_(cast<Callback>(handle))
 {
     char const * meta = handle_->callback->metaData(handle_);
@@ -93,7 +93,7 @@ bool CMetaObject::disconnect(const MetaObject::Connection &c) const
     return c;
 }
 
-CMetaProperty::CMetaProperty(Array const & metaData, HandlePtr handle)
+CMetaProperty::CMetaProperty(Array const & metaData, CHandlePtr handle)
     : metaData_(metaData)
     , handle_(cast<CMetaObject::Callback>(handle))
 {
@@ -164,7 +164,7 @@ bool CMetaProperty::write(Object *object, Value &&value) const
     return handle_->callback->writeProperty(handle_, object, index, CVariant(value));
 }
 
-CMetaMethod::CMetaMethod(Array const & metaData, HandlePtr handle)
+CMetaMethod::CMetaMethod(Array const & metaData, CHandlePtr handle)
     : metaData_(metaData)
     , handle_(cast<CMetaObject::Callback>(handle))
 {
@@ -242,9 +242,9 @@ const char *CMetaMethod::parameterName(size_t index) const
     return metaData_[6].toArray().at(index).toString().c_str();
 }
 
-struct RespHandle : Handle<void>
+struct RespCHandle : CHandle<void>
 {
-    RespHandle(MetaMethod::Response const &resp, Value::Type resultType)
+    RespCHandle(MetaMethod::Response const &resp, Value::Type resultType)
     {
         callback = reinterpret_cast<void *>(&invokeResponse);
         resp_ = resp;
@@ -257,7 +257,7 @@ struct RespHandle : Handle<void>
     }
     static void invokeResponse(void * resp, void * result)
     {
-        reinterpret_cast<RespHandle*>(resp)->invoke(result);
+        reinterpret_cast<RespCHandle*>(resp)->invoke(result);
     }
 private:
     MetaMethod::Response resp_;

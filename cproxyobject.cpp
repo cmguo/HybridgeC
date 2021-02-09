@@ -1,11 +1,11 @@
 #include "cproxyobject.h"
-#include "cmeta.h"
+#include "cmetaobject.h"
 #include "cchannel.h"
 #include "cvariant.h"
 
 #include <core/meta.h>
 
-CProxyObject::CProxyObject(HandlePtr channel, Map &&classinfo)
+CProxyObject::CProxyObject(CHandlePtr channel, Map &&classinfo)
     : ProxyObject(std::move(classinfo))
 {
     callback_.callback = &ProxyObjectStub::instance;
@@ -17,7 +17,7 @@ CProxyObject::~CProxyObject()
 {
 }
 
-CProxyObject *CProxyObject::fromCallback(HandlePtr callback)
+CProxyObject *CProxyObject::fromCallback(CHandlePtr callback)
 {
     return reinterpret_cast<CProxyObject*>(
                 reinterpret_cast<char *>(callback) - offsetof(CProxyObject, callback_));
@@ -60,7 +60,7 @@ bool CProxyObject::writeProperty(char const * property, void * value)
     return false;
 }
 
-bool CProxyObject::invokeMethod(char const * method, void ** args, HandlePtr onResult)
+bool CProxyObject::invokeMethod(char const * method, void ** args, CHandlePtr onResult)
 {
     MetaObject const * meta = metaObj();
     std::string name = method;
@@ -82,12 +82,12 @@ bool CProxyObject::invokeMethod(char const * method, void ** args, HandlePtr onR
 
 static void handleSignal(void * handler, Object const * object, size_t index, Array && args)
 {
-    auto callback = reinterpret_cast<Handle<CProxyObject::SignalCallback>*>(handler);
+    auto callback = reinterpret_cast<CHandle<CProxyObject::SignalCallback>*>(handler);
     CVariantArgs argv(std::move(args));
-    callback->callback->apply(reinterpret_cast<HandlePtr>(handler), object, index, argv);
+    callback->callback->apply(reinterpret_cast<CHandlePtr>(handler), object, index, argv);
 }
 
-bool CProxyObject::connect(size_t signalIndex, HandlePtr handler)
+bool CProxyObject::connect(size_t signalIndex, CHandlePtr handler)
 {
     MetaObject const * meta = metaObj();
     size_t index = static_cast<size_t>(signalIndex);
@@ -100,7 +100,7 @@ bool CProxyObject::connect(size_t signalIndex, HandlePtr handler)
                                          handler, handleSignal));
 }
 
-bool CProxyObject::disconnect(size_t signalIndex, HandlePtr handler)
+bool CProxyObject::disconnect(size_t signalIndex, CHandlePtr handler)
 {
     MetaObject const * meta = metaObj();
     size_t index = static_cast<size_t>(signalIndex);
@@ -115,32 +115,32 @@ bool CProxyObject::disconnect(size_t signalIndex, HandlePtr handler)
 
 /* ProxyObjectStub */
 
-static const char *metaData(HandlePtr object)
+static const char *metaData(CHandlePtr object)
 {
     return CProxyObject::fromCallback(object)->metaData();
 }
 
-static void * readProperty(HandlePtr object, char const * property)
+static void * readProperty(CHandlePtr object, char const * property)
 {
     return CProxyObject::fromCallback(object)->readProperty(property);
 }
 
-static size_t writeProperty(HandlePtr object, char const * property, void * value)
+static size_t writeProperty(CHandlePtr object, char const * property, void * value)
 {
     return CProxyObject::fromCallback(object)->writeProperty(property, value);
 }
 
-static size_t invokeMethod(HandlePtr object, char const * method, void ** args, HandlePtr response)
+static size_t invokeMethod(CHandlePtr object, char const * method, void ** args, CHandlePtr response)
 {
     return CProxyObject::fromCallback(object)->invokeMethod(method, args, response);
 }
 
-static size_t connect(HandlePtr object, size_t signalIndex, HandlePtr handler)
+static size_t connect(CHandlePtr object, size_t signalIndex, CHandlePtr handler)
 {
     return CProxyObject::fromCallback(object)->connect(signalIndex, handler);
 }
 
-static size_t disconnect(HandlePtr object, size_t signalIndex, HandlePtr handler)
+static size_t disconnect(CHandlePtr object, size_t signalIndex, CHandlePtr handler)
 {
     return CProxyObject::fromCallback(object)->disconnect(signalIndex, handler);
 }
