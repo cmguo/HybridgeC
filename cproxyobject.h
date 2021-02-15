@@ -3,6 +3,20 @@
 
 #include "chandle.h"
 
+#include <stdlib.h>
+
+struct CProxyObjectResultCallback
+{
+    void (*apply)(CHandlePtr handle, void * result);
+};
+
+struct CProxyObjectSignalCallback
+{
+    void (*apply)(CHandlePtr handle, CConstHandlePtr object, size_t signalIndex, void ** args);
+};
+
+#ifdef __cplusplus
+
 #include <core/proxyobject.h>
 
 struct CProxyObjectStub;
@@ -10,15 +24,9 @@ struct CProxyObjectStub;
 class CProxyObject : public ProxyObject
 {
 public:
-    struct ResultCallback
-    {
-        void (*apply)(CHandlePtr handle, void * result);
-    };
+    typedef CProxyObjectResultCallback ResultCallback;
 
-    struct SignalCallback
-    {
-        void (*apply)(CHandlePtr handle, CConstHandlePtr object, size_t signalIndex, void ** args);
-    };
+    typedef CProxyObjectSignalCallback SignalCallback;
 
     CProxyObject(CHandlePtr channel, Map &&classinfo);
 
@@ -46,6 +54,8 @@ private:
     CHandlePtr handle_;
 };
 
+#endif
+
 struct CProxyObjectStub
 {
     const char * (*metaData)(CHandlePtr object);
@@ -55,6 +65,5 @@ struct CProxyObjectStub
     size_t (*connect)(CHandlePtr object, size_t signalIndex, CHandlePtr handler);
     size_t (*disconnect)(CHandlePtr object, size_t signalIndex, CHandlePtr handler);
 };
-
 
 #endif // CPROXYOBJECT_H

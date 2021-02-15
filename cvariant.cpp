@@ -29,6 +29,11 @@ struct Header
         size = n;
         block = CVariant::allocBuffer(n);
     }
+    static Header * allocHeader(size_t n = 0) {
+        Header * h = reinterpret_cast<Header*>(CVariant::allocBuffer(sizeof(Header)));
+        h->alloc(n);
+        return h;
+    }
 };
 
 template<> struct Copy<std::string>
@@ -50,16 +55,21 @@ template<> struct Copy<std::string>
     }
     static void free(Header &) {
     }
+    static void * encode(char const * string) {
+        Header * h = Header::allocHeader();
+        h->block = const_cast<char *>(string);
+        return h;
+    }
+    static char const * decode(void * variant) {
+        Header * h = reinterpret_cast<Header*>(variant);
+        return reinterpret_cast<char const *>(h->block);
+    }
 };
 
 template<> struct Copy<Array>
 {
     static constexpr char const * magic = "ARR";
-    struct Entry
-    {
-        Value::Type type;
-        void * value;
-    };
+    typedef CArrayEntry Entry;
     static void copyFrom(Array const & f, Header & h, bool copy)
     {
         h.alloc(f.size() * sizeof (Entry));
@@ -84,17 +94,31 @@ template<> struct Copy<Array>
             CVariant::freeBuffer(entries->type, entries->value);
         }
     }
+    static void * encode(void * array, size_t count, ArrayVisitor visitor)
+    {
+        Header * h = Header::allocHeader(count * sizeof (Entry));
+        Entry * entries = reinterpret_cast<Entry*>(h->block);
+        for (int i = 0; i < count; ++i, ++entries) {
+            visitor(array, i, entries);
+        }
+        return h;
+    }
+    static void * decode(void * array, void * outArr, ArrayVisitor visitor)
+    {
+        Header * h = reinterpret_cast<Header*>(array);
+        size_t count = h->size / sizeof (Entry);
+        Entry * entries = reinterpret_cast<Entry *>(h->block);
+        for (int i = 0; i < count; ++i, ++entries) {
+            visitor(outArr, i, entries);
+        }
+        return outArr;
+    }
 };
 
 template<> struct Copy<Map>
 {
     static constexpr char const * magic = "MAP";
-    struct Entry
-    {
-        void * key;
-        Value::Type type;
-        void * value;
-    };
+    typedef CMapEntry Entry;
     static void copyFrom(Map const & f, Header & h, bool copy)
     {
         h.alloc(f.size() * sizeof (Entry));
@@ -103,7 +127,7 @@ template<> struct Copy<Map>
         for (size_t i = 0; i < f.size(); ++i, ++it) {
             Header h;
             Copy<std::string>::copyFrom(it->first, h, copy);
-            entries[i].key = h.block;
+            entries[i].key = reinterpret_cast<char *>(h.block);
             entries[i].type = it->second.type();
             entries[i].value = CVariant(it->second, copy).detach();
         }
@@ -124,6 +148,25 @@ template<> struct Copy<Map>
             CVariant::freeBuffer(Value::None, entries->key);
             CVariant::freeBuffer(entries->type, entries->value);
         }
+    }
+    static void * encode(void * map, size_t count, MapVisitor visitor)
+    {
+        Header * h = Header::allocHeader(count * sizeof (Entry));
+        Entry * entries = reinterpret_cast<Entry*>(h->block);
+        for (int i = 0; i < count; ++i, ++entries) {
+            visitor(map, i, entries);
+        }
+        return h;
+    }
+    static void * decode(void * map, void * outMap, MapVisitor visitor)
+    {
+        Header * h = reinterpret_cast<Header*>(map);
+        size_t count = h->size / sizeof (Entry);
+        Entry * entries = reinterpret_cast<Entry *>(h->block);
+        for (int i = 0; i < count; ++i, ++entries) {
+            visitor(outMap, i, entries);
+        }
+        return outMap;
     }
 };
 
@@ -169,6 +212,9 @@ static std::list<void*> buffers;
 
 void * CVariant::allocBuffer(size_t size)
 {
+    if (size == 0) {
+        return nullptr;
+    }
     void * buffer = new char[size];
     std::cout << "allocBuffer " << buffer << std::endl;
     buffers.push_back(buffer);
@@ -257,4 +303,34 @@ CVariantArgs::CVariantArgs(Array &&args)
 CVariantArgs::operator void **()
 {
     return args_.empty() ? nullptr : &args_[0];
+}
+
+void * cVariantEncodeString(char const * string)
+{
+    return Copy<std::string>::encode(string);
+}
+
+char const * cVariantDecodeString(void * variant)
+{
+    return Copy<std::string>::decode(variant);
+}
+
+void * cVariantEncodeArray(void * array, size_t count, ArrayVisitor visitor)
+{
+    return Copy<Array>::encode(array, count, visitor);
+}
+
+void * cVariantDecodeArray(void * array, void * outArr, ArrayVisitor visitor)
+{
+    return Copy<Array>::decode(array, outArr, visitor);
+}
+
+void * cVariantEncodeMap(void * map, size_t count, MapVisitor visitor)
+{
+    return Copy<Map>::encode(map, count, visitor);
+}
+
+void * cVariantDecodeMap(void * map, void * outMap, MapVisitor visitor)
+{
+    return Copy<Map>::decode(map, outMap, visitor);
 }
