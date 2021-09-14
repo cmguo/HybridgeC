@@ -244,8 +244,11 @@ CVariant::CVariant(Value const & from, bool copy)
     : type_(from.type())
     , buffer_(const_cast<void*>(from.value()))
 {
+    // No need convert for primitive types, but may copy them
     if (!copy && from.type() < Value::String)
         return;
+    // For complex types, convert is always needed,
+    //   but <copy> also has effect on elements
     size_t sz = copies[from.type()](from.value(), nullptr, copy);
     buffer_ = allocBuffer(sz);
     copies[from.type()](from.value(), buffer_, copy);

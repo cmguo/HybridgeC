@@ -36,48 +36,35 @@ char const * CProxyObject::metaData()
 
 void * CProxyObject::readProperty(const char *property)
 {
-    MetaObject const * meta = metaObj();
-    std::string name = property;
-    for (size_t i = 0; i < meta->propertyCount(); ++i) {
-        MetaProperty const & mp = meta->property(i);
-        if (name == mp.name()) {
-            Value v = mp.read(this);
-            return CVariant(v, true).detach();
-            // TODO: when reset buffer?
-        }
+    MetaProperty const * mp = this->property(property);
+    if (mp) {
+        Value v = mp->read(this);
+        return CVariant(v, true).detach();
+        // TODO: when reset buffer?
     }
     return nullptr;
 }
 
 bool CProxyObject::writeProperty(char const * property, void * value)
 {
-    MetaObject const * meta = metaObj();
-    std::string name = property;
-    for (size_t i = 0; i < meta->propertyCount(); ++i) {
-        MetaProperty const & mp = meta->property(i);
-        if (name == mp.name()) {
-            return mp.write(this, CVariant(mp.type(), value).toValue());
-        }
+    MetaProperty const * mp = this->property(property);
+    if (mp) {
+        return mp->write(this, CVariant(mp->type(), value).toValue());
     }
     return false;
 }
 
 bool CProxyObject::invokeMethod(char const * method, void ** args, CHandlePtr onResult)
 {
-    MetaObject const * meta = metaObj();
-    std::string name = method;
-    CVariant argsBuffer(Value::None, args);
-    for (size_t i = 0; i < meta->methodCount(); ++i) {
-        MetaMethod const & md = meta->method(i);
-        if (name == md.name()) {
-            Array argv;
-            for (size_t j = 0; j < md.parameterCount(); ++j)
-                argv.emplace_back(CVariant(md.parameterType(j), args[j]).toValue());
-            return md.invoke(this, std::move(argv),
-                                  [onResult] (Value && result) {
-                cast<ResultCallback>(onResult)->callback->apply(onResult, CVariant(result));
-            });
-        }
+    MetaMethod const * md = this->method(method);
+    if (md) {
+        Array argv;
+        for (size_t j = 0; j < md->parameterCount(); ++j)
+            argv.emplace_back(CVariant(md->parameterType(j), args[j]).toValue());
+        return md->invoke(this, std::move(argv),
+                              [onResult] (Value && result) {
+            cast<ResultCallback>(onResult)->callback->apply(onResult, CVariant(result));
+        });
     }
     return false;
 }
